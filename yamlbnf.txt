@@ -1,0 +1,45 @@
+<uppercase-character> = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G'
+                      | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N'
+                      | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U'
+                      | 'V' | 'W' | 'X' | 'Y' | 'Z' ;
+<lowercase-character> = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g'
+                      | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'n'
+                      | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u'
+                      | 'v' | 'w' | 'x' | 'y' | 'z' ;
+
+<symbol> ::= '!' | '@' | '#' | '$' | '%' | '^' | '&' 
+			| '*' | '(' | ')' | '-' | '_' | '+' | '=' 
+			|'<' | '>' | ',' | '.' | '{' | '}' | ';' | '|';
+
+<character> ::= <uppercase-character> | <lowercase-character> | <escaped-character> | <digit> | <symbol>;
+<escaped-character> ::= '\', <special-symbol>;
+
+<special-symbol> ::= '\' | ':' | '\n' | '\t' | '"' | ''';
+<digit> ::= '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9';
+<number> ::= ['-'], <digit>, {<digit>};
+<string> ::= <character>, {<character>};
+<empty-string> ::= '\"\"';
+<empty-list> ::= '[]';
+<null> ::= 'null' | '~';
+<tab, LEVEL> ::= {'  ', LEVEL}; (* Since YAML is not context-free, it is impossible to write a BNF for it with usual BNF rules *)
+                                (* So we have decided to add a new rule where certain non terminal symbols will have LEVEL context added to them*)
+                                (* "    " would be a correct expression for <tab, 2> *)
+
+<new-line> ::= '\n';
+
+<yaml-starter> ::= '---\n';
+<yaml-string> ::= [<yaml-starter>], <document>;
+<document> ::= <complex> | <primitive>;
+<primitive> ::= (<null> | <number> | <empty-string> | <empty-list> | <string>), <new-line>;
+<complex> ::= <list> | <map>;
+
+<list, LEVEL> ::= <tab, LEVEL>, <list-item, LEVEL>, {<tab, LEVEL>, <list-item, LEVEL>}; 
+<list-item, LEVEL> ::= '- ', (<list-item-list, LEVEL> | <list-item-map, LEVEL> | <primitive>);
+<list-item-list, LEVEL> ::= <new-line>, <list, LEVEL+1>;
+<list-item-map, LEVEL> ::= <map-item, LEVEL>, {<tab, LEVEL+1>, <map-item, LEVEL>};
+
+<map, LEVEL> ::= <tab, LEVEL>, <map-item, LEVEL>, {<tab, LEVEL>, <map-item, LEVEL>};
+<map-key> ::= (<empty-string> | <string>), ':',  (<new-line> | ' ');
+<map-item, LEVEL> ::=  <map-key>, (<map-item-list, LEVEL> | <map-item-map, LEVEL> | <primitive>);
+<map-item-list, LEVEL> ::= <list, LEVEL> | <list, LEVEL+1>;
+<map-item-map, LEVEL> ::= <map, LEVEL+1>;
